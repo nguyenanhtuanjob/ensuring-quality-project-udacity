@@ -28,6 +28,14 @@ stages:
     - script: ls -la $(System.DefaultWorkingDirectory)/terraform/environments/test
     #displayName: 'List files in Terraform directory'
     # Install Terraform on the pipeline agent 
+    # Install Azure CLI on the pipeline agent 
+    - task: Bash@3
+      displayName: 'Install Azure CLI'
+      inputs:
+        targetType: 'inline'
+        script: |
+          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+
     - task: Bash@3
       displayName: 'Terrafom installation'
       inputs:
