@@ -80,15 +80,15 @@ stages:
         # backendAzureRmKey: 'test.terraform.tfstate'
         
 
-    # # Run Terraform Validate    
-    # - task: Bash@3
-    #   displayName: Terraform validate
-    #   inputs:
-    #     # provider: 'azurerm'
-    #     # command: 'validate'
-    #     targetType: 'inline'
-    #     script: |
-    #       terraform validate $(System.DefaultWorkingDirectory)/terraform/environments/test
+    # Run Terraform Validate    
+    - task: Bash@3
+      displayName: Terraform validate
+      inputs:
+        # provider: 'azurerm'
+        # command: 'validate'
+        targetType: 'inline'
+        script: |
+          terraform plan $(System.DefaultWorkingDirectory)/terraform/environments/test
 
     
     # Run Terraform Apply
