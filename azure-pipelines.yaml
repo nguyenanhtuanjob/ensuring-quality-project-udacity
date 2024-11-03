@@ -48,12 +48,7 @@ stages:
         targetType: 'inline'
         script: |
           cd $(System.DefaultWorkingDirectory)/terraform/environments/test
-          terraform init \
-          -backend-config="resource_group_name=Azuredevops" \
-          -backend-config="storage_account_name=tfstate21172" \
-          -backend-config="container_name=tfstate" \
-          -backend-config="key=test.terraform.tfstate" \
-          $(System.DefaultWorkingDirectory)/terraform/environments/test
+          terraform init
         # provider: 'azurerm'
         # command: 'init'
         # workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
