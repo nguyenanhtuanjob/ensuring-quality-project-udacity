@@ -28,6 +28,10 @@ variable "application_type" {
 variable virtual_network_name {
     default = ""
 }
-variable address_prefix_test {}
-variable address_space {}
+variable address_prefix_test {
+    default = "10.5.1.0/24"
+}
+variable address_space {
+    default = ["10.5.0.0/16"]
+}
 
