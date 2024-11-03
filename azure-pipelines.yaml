@@ -20,7 +20,7 @@ variables:
   environmentName: 'test'
 
 stages:
-- stage: Build
+- stage: ProvisionInfrastructure
   jobs:
   - job: BuildInfrastructure
     steps:
@@ -106,13 +106,117 @@ stages:
 
     # Destroy the resources in Azure
     # ToDo: Change the workingDirectory path, as applicable to you
-    - task: Bash@3
-      displayName: Terraform destroy
-      inputs:
-        targetType: 'inline'
-        script: |
-          terraform -chdir=$(System.DefaultWorkingDirectory)/terraform/environments/test destroy -auto-approve
+    # - task: Bash@3
+    #   displayName: Terraform destroy
+    #   inputs:
+    #     targetType: 'inline'
+    #     script: |
+    #       terraform -chdir=$(System.DefaultWorkingDirectory)/terraform/environments/test destroy -auto-approve
         # provider: 'azurerm'
         # command: 'destroy'
         # workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
         # environmentServiceNameAzureRM: '$(azureServiceConnectionId)'        
+- stage: Build
+displayName: Build
+jobs:
+- job: Build
+  pool:
+    name: Hosted Ubuntu 1604
+  steps:
+  #Needed for Terraform VM deployment
+  - task: InstallSSHKey@0
+    inputs:
+      knownHostsEntry: 'KNOWN_HOSTS_STRING'
+      sshPublicKey: 'PUBLIC_KEY'
+      sshKeySecureFile: 'id_rsa.pub'
+  - task: ArchiveFiles@2
+    displayName: 'Archive FakeRestAPI'
+    inputs:
+      rootFolderOrFile: '$(System.DefaultWorkingDirectory)/fakerestapi'
+      includeRootFolder: false
+      archiveType: 'zip'
+      archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)-fakerestapi.zip'
+  - publish: $(Build.ArtifactStagingDirectory)/$(Build.BuildId)-fakerestapi.zip
+    displayName: 'Upload Package'
+    artifact: drop-fakerestapi
+  - task: ArchiveFiles@2
+    displayName: 'Archive files'
+    inputs:
+      rootFolderOrFile: '$(System.DefaultWorkingDirectory)/automatedtesting/selenium'
+      includeRootFolder: false
+      archiveType: zip
+      archiveFile: $(Build.ArtifactStagingDirectory)/selenium-tests.zip
+      replaceExistingArchive: true
+  - upload: $(Build.ArtifactStagingDirectory)/selenium-tests.zip
+    artifact: selenium
+
+- stage: WebAppDeployment
+displayName: Web App Deployment
+jobs:
+- deployment: FakeRestAPI
+  pool:
+    vmImage: 'Ubuntu-16.04'
+  environment: 'WAP-TEST'
+  strategy:
+    runOnce:
+      deploy:
+        steps:
+        - task: AzureWebApp@1
+          displayName: 'Deploy Azure Web App'
+          inputs:
+            azureSubscription: 'EnsuringQualityReleasesSC'
+            appType: 'webApp'
+            appName: 'WAS-EQR'
+            package: '$(Pipeline.Workspace)/drop-fakerestapi/$(Build.BuildId)-fakerestapi.zip'
+            deploymentMethod: 'auto'
+- deployment: VMDeploy
+  displayName: VM Deploy
+  environment:
+    name:  'VM-TEST'
+    resourceType: VirtualMachine
+  strategy:
+    runOnce:
+      deploy:
+        steps:
+        - task: Bash@3
+          displayName: 'Install Dependencies'
+          inputs:
+            targetType: 'inline'
+            script: |
+              #! /bin/bash
+              
+              sudo apt-get upgrade -y
+              sudo apt-get install python3-pip -y
+              sudo apt-get install unzip -y
+              sudo apt-get install -y chromium-browser
+              pip3 install selenium
+              
+              # download chrome driver
+              FILE=chromedriver_linux64.zip
+              if [ -f "$FILE" ]; then
+                echo "$FILE exists."
+              else
+                wget https://chromedriver.storage.googleapis.com/2.41/chromedriver_linux64.zip
+              fi
+              # install chrome driver
+              unzip chromedriver_linux64.zip
+              sudo mv chromedriver /usr/bin/chromedriver
+              sudo chown root:root /usr/bin/chromedriver
+              sudo chmod +x /usr/bin/chromedriver
+              chromium-browser -version
+              chromedriver --version
+              # agent log analytics
+              wget https://raw.githubusercontent.com/Microsoft/OMS-Agent-for-Linux/master/installer/scripts/onboard_agent.sh && sh onboard_agent.sh -w dbf2bd83-6d47-436b-a499-a2b566def8fe -s MuSR8Ti5MMi0E+9+1NM4NxCxFqJcfLzuGD0EtGhjXo3Vhy/THcSdCf1WyQnkXafD+6DiFjiOAEfJiQh6EbZVeg== -d opinsights.azure.com
+
+        - download: current
+          displayName: 'Download Selenium'
+          artifact: selenium
+        - task: Bash@3
+          displayName: UI Tests
+          inputs:
+            targetType: 'inline'
+            script: |
+              unzip -o $(Pipeline.Workspace)/selenium/selenium-tests.zip -d .
+              sudo mkdir /var/logs
+              python3 uitests.py > ui-logs.log
+              sudo mv ui-logs.log /var/logs
