@@ -14,14 +14,20 @@ variable "tenant_id" {
 }
 
 # Resource Group/Location
-variable "location" {}
+variable "location" {
+   default = "southcentralus" 
+}
 variable "resource_group" {
+    default = "Azuredevops"
 }
 variable "application_type" {
+    default = "EQR"
 }
 
 # Network
-variable virtual_network_name {}
+variable virtual_network_name {
+    default = ""
+}
 variable address_prefix_test {}
 variable address_space {}
 
