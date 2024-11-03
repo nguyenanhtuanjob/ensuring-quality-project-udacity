@@ -24,32 +24,54 @@ stages:
   jobs:
   - job: BuildInfrastructure
     steps:
+    - checkout: self
+    - script: ls -la $(System.DefaultWorkingDirectory)/terraform/environments/test
+    #displayName: 'List files in Terraform directory'
     # Install Terraform on the pipeline agent 
     - task: Bash@3
       displayName: 'Terrafom installation'
       inputs:
-        terraformVersion: '1.9.5'
+        targetType: 'inline'
+        script: |
+          sudo apt-get update
+          sudo apt-get install -y gnupg software-properties-common
+          wget -O- https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+          sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+          sudo apt-get update
+          sudo apt-get install terraform
     
     # Run Terraform Init on the pipeline agent 
     # ToDo: Replace the resource group name, storage account name, and container name below
     - task: Bash@3
       displayName: 'Terrafom init'
       inputs:
-        provider: 'azurerm'
-        command: 'init'
-        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
-        backendServiceArm: '$(azureServiceConnectionId)'
-        backendAzureRmResourceGroupName: 'Azuredevops'
-        backendAzureRmStorageAccountName: 'tfstate21172'
-        backendAzureRmContainerName: 'tfstate'
-        backendAzureRmKey: 'test.terraform.tfstate'
+        targetType: 'inline'
+        script: |
+          terraform init \
+          -backend-config="resource_group_name=Azuredevops" \
+          -backend-config="storage_account_name=tfstate21172" \
+          -backend-config="container_name=tfstate" \
+          -backend-config="key=test.terraform.tfstate" \
+          $(System.DefaultWorkingDirectory)/terraform/environments/test
+        # provider: 'azurerm'
+        # command: 'init'
+        # workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
+        # backendServiceArm: '$(azureServiceConnectionId)'
+        # backendAzureRmResourceGroupName: 'Azuredevops'
+        # backendAzureRmStorageAccountName: 'tfstate21172'
+        # backendAzureRmContainerName: 'tfstate'
+        # backendAzureRmKey: 'test.terraform.tfstate'
+        
 
     # Run Terraform Validate    
     - task: Bash@3
       displayName: Terraform validate
       inputs:
-        provider: 'azurerm'
-        command: 'validate'
+        # provider: 'azurerm'
+        # command: 'validate'
+        targetType: 'inline'
+        script: |
+          terraform validate $(System.DefaultWorkingDirectory)/terraform/environments/test
 
     
     # Run Terraform Apply
@@ -57,17 +79,23 @@ stages:
     - task: Bash@3
       displayName: Terraform apply
       inputs:
-        provider: 'azurerm'
-        command: 'apply'
-        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
-        environmentServiceNameAzureRM: '$(azureServiceConnectionId)'
+        targetType: 'inline'
+        script: |
+          terraform apply -auto-approve $(System.DefaultWorkingDirectory)/terraform/environments/test
+        # provider: 'azurerm'
+        # command: 'apply'
+        # workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
+        # environmentServiceNameAzureRM: '$(azureServiceConnectionId)'
 
     # Destroy the resources in Azure
     # ToDo: Change the workingDirectory path, as applicable to you
     - task: Bash@3
       displayName: Terraform destroy
       inputs:
-        provider: 'azurerm'
-        command: 'destroy'
-        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
-        environmentServiceNameAzureRM: '$(azureServiceConnectionId)'        
+        targetType: 'inline'
+        script: |
+          terraform destroy -auto-approve $(System.DefaultWorkingDirectory)/terraform/environments/test
+        # provider: 'azurerm'
+        # command: 'destroy'
+        # workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
+        # environmentServiceNameAzureRM: '$(azureServiceConnectionId)'        
