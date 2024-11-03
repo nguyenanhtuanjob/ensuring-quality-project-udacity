@@ -57,7 +57,7 @@ stages:
         scriptLocation: 'inlineScript'
         inlineScript: |
           echo "Logged in to Azure"
-          
+
     # Run Terraform Init on the pipeline agent 
     # ToDo: Replace the resource group name, storage account name, and container name below
     - task: Bash@3
@@ -67,6 +67,11 @@ stages:
         script: |
           cd $(System.DefaultWorkingDirectory)/terraform/environments/test
           terraform init
+          -backend-config="resource_group_name=Azuredevops" \
+          -backend-config="storage_account_name=tfstate21172" \
+          -backend-config="container_name=tfstate" \
+          -backend-config="key=test.terraform.tfstate" \
+          $(System.DefaultWorkingDirectory)/terraform/environments/test
         # provider: 'azurerm'
         # command: 'init'
         # workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
