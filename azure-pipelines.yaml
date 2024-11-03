@@ -98,7 +98,7 @@ stages:
       inputs:
         targetType: 'inline'
         script: |
-          terraform apply -auto-approve $(System.DefaultWorkingDirectory)/terraform/environments/test
+          terraform -chdir=$(System.DefaultWorkingDirectory)/terraform/environments/test apply -auto-approve
         # provider: 'azurerm'
         # command: 'apply'
         # workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
@@ -111,7 +111,7 @@ stages:
       inputs:
         targetType: 'inline'
         script: |
-          terraform destroy -auto-approve $(System.DefaultWorkingDirectory)/terraform/environments/test
+          terraform -chdir=$(System.DefaultWorkingDirectory)/terraform/environments/test destroy -auto-approve
         # provider: 'azurerm'
         # command: 'destroy'
         # workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
