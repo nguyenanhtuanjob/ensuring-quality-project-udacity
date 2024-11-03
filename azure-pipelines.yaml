@@ -15,7 +15,7 @@ stages:
     - task: InstallSSHKey@0
       inputs:
         knownHostsEntry: 'default'
-        sshKeySecureFile: 'id_rsa.txt'
+        sshKeySecureFile: 'id_rsa'
     - task: Bash@3
       inputs:
         targetType: 'inline'
@@ -31,10 +31,10 @@ stages:
         provider: 'azurerm'
         command: 'init'
         backendServiceArm: 'EnsuringQualityReleasesSC'
-        backendAzureRmResourceGroupName: 'RG-SUPPORT'
-        backendAzureRmStorageAccountName: 'sageneralsupport'
-        backendAzureRmContainerName: 'terraform-state'
-        backendAzureRmKey: 'ensuring-quality-releases.tfstate'
+        backendAzureRmResourceGroupName: 'Azuredevops'
+        backendAzureRmStorageAccountName: 'tfstate21172'
+        backendAzureRmContainerName: 'tfstate'
+        backendAzureRmKey: 'test.terraform.tfstate'
         workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
     - task: TerraformTaskV1@0
       displayName: Terraform Plan
@@ -63,7 +63,7 @@ stages:
       inputs:
         knownHostsEntry: 'KNOWN_HOSTS_STRING'
         sshPublicKey: 'PUBLIC_KEY'
-        sshKeySecureFile: 'id_rsa.txt'
+        sshKeySecureFile: 'id_rsa'
     - task: ArchiveFiles@2
       displayName: 'Archive FakeRestAPI'
       inputs:
