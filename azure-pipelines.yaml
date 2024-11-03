@@ -47,6 +47,7 @@ stages:
       inputs:
         targetType: 'inline'
         script: |
+          cd $(System.DefaultWorkingDirectory)/terraform/environments/test
           terraform init \
           -backend-config="resource_group_name=Azuredevops" \
           -backend-config="storage_account_name=tfstate21172" \
