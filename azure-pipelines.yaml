@@ -48,6 +48,16 @@ stages:
           sudo apt-get update
           sudo apt-get install terraform
     
+    # Azure CLI Login
+    - task: AzureCLI@2
+      displayName: 'Azure CLI Login'
+      inputs:
+        azureSubscription: '$(azureServiceConnectionId)' # Use your service connection name
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          echo "Logged in to Azure"
+          
     # Run Terraform Init on the pipeline agent 
     # ToDo: Replace the resource group name, storage account name, and container name below
     - task: Bash@3
